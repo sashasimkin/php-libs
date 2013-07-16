@@ -6,5 +6,4 @@
  */
 
 include dirname(__FILE__) . '/lib/Autoload.php';
-
 Autoload::registerPath(dirname(__FILE__) . '/lib');

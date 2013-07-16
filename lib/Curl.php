@@ -7,63 +7,152 @@
 
 
 class Curl {
+	/**
+	 * Curl identifier
+	 *
+	 * @var resource
+	 */
 	private $ch;
-	private $defaultOpt = array(
-		'USERAGENT' => 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19',
-		'RETURNTRANSFER' => true,
-		'AUTOREFERER' => true,
-		'CONNECTTIMEOUT' => 20,
-		'TIMEOUT' => 20
-	);
-	private $toString = '';
+	/**
+	 * Default options to each request
+	 *
+	 * @var array
+	 */
+	private $defaultOpt=array('USERAGENT'=>'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19', 'RETURNTRANSFER'=>true, 'AUTOREFERER'=>true, 'CONNECTTIMEOUT'=>20, 'TIMEOUT'=>20);
+	/**
+	 * Default object string representation
+	 *
+	 * @var bool|string
+	 */
+	private $toString='';
 
-	public function __construct( $url = null, $opt = array(), $exec = false ){
-		$this->ch = curl_init( $url );
 
-		$this->setopt_array( $this->defaultOpt );
-		$this->setopt_array( $opt );
+	/**
+	 * Construct object
+	 *
+	 * @param null $url
+	 * @param array $opt
+	 * @param bool $exec
+	 */
+	public function __construct($url=null, $opt=array(), $exec=false) {
+		$this->ch=curl_init($url);
 
-		if( $exec ) $this->toString = $this->exec();
+		$this->setopt_array($this->defaultOpt);
+		$this->setopt_array($opt);
 
-		if( !$this->toString ) $this->toString = $this->lastError();
+		if($exec) $this->exec();
+
+		if(!$this->toString) $this->toString=$this->lastError();
 	}
-	public function setopt( $opt, $val ){
-		$opt = strtoupper( $opt );
-		return curl_setopt( $this->ch, constant( 'CURLOPT_' . $opt), $val );
-	}
-	public function setopt_array( $array ){
-		$false = array();
 
-		foreach($array as $opt => $val) {
-			if(!$this->setopt( $opt, $val )) $false[$opt] = $this->lastError(  );
+	/**
+	 * Set option to curl seance
+	 *
+	 * @param string $opt Option name without `CURLOPT_`
+	 * @param mixed $val Option value
+	 *
+	 * @return bool
+	 */
+	public function setopt($opt, $val) {
+		$opt=strtoupper($opt);
+
+		return curl_setopt($this->ch, constant('CURLOPT_' . $opt), $val);
+	}
+
+	/**
+	 * Set array with options to current seance
+	 * Use same as `$this->setopt`
+	 *
+	 * @param $array
+	 *
+	 * @return array|bool
+	 */
+	public function setopt_array($array) {
+		$false=array();
+
+		foreach($array as $opt=>$val) {
+			if(!$this->setopt($opt, $val)) $false[$opt]=$this->lastError();
 		}
 
-		return count( $false ) == 0 ? true : $false;
+		return count($false) == 0 ? true : $false;
 	}
-	public function exec( $url = null ){
-		if( filter_var( strpos( $url, '://' ) === false ? $url = 'http://' . $url : $url, FILTER_VALIDATE_URL ) ) $this->setopt( 'URL', $url );
-		if( strpos( $url, 's://' ) !== false ) {
-			$this->setopt( 'SSL_VERIFYPEER', false );
-			$this->setopt( 'SSL_VERIFYHOST', false );
+
+	/**
+	 * Execute request on url
+	 *
+	 * @param null $url
+	 *
+	 * @return $this Curl
+	 */
+	public function exec($url=null) {
+		if(filter_var(strpos($url, '://') === false ? $url='http://' . $url : $url, FILTER_VALIDATE_URL)) $this->setopt('URL', $url);
+		if(strpos($url, 's://') !== false) {
+			$this->setopt('SSL_VERIFYPEER', false);
+			$this->setopt('SSL_VERIFYHOST', false);
 		}
 
-		$this->toString = curl_exec( $this->ch );
+		$this->toString=curl_exec($this->ch);
 
-		return $this->toString;
+		return $this;
 	}
-	public function getInfo(  ){
-		return curl_getinfo( $this->ch );
+
+	/**
+	 * Just preg_match wrapper
+	 *
+	 * @param $pattern
+	 * @param $matches
+	 * @param null $flags
+	 * @param int $offset
+	 *
+	 * @return $this Curl
+	 */
+	public function match($pattern, &$matches, $flags=null, $offset=0) {
+		preg_match($pattern, $this->toString, $matches, $flags, $offset);
+
+		return $this;
 	}
-	public function lastError(  ){
-		return curl_errno( $this->ch ) == 0 ? false : 'Error: ' . curl_errno( $this->ch ) . ': ' . curl_error( $this->ch );
+
+	/**
+	 * Get request info
+	 *
+	 * @param $key
+	 *
+	 * @return null
+	 */
+	public function getInfo($key=null) {
+		$requestInfo = curl_getinfo($this->ch);
+		return $key == null ? $requestInfo : (isset($requestInfo[$key]) ? $requestInfo[$key] : null);
 	}
-	public function close(){
-		@curl_close( $this->ch );
+
+	/**
+	 * Get last error if exist
+	 *
+	 * @return bool|string
+	 */
+	public function lastError() {
+		return curl_errno($this->ch) == 0 ? false : 'Error: ' . curl_errno($this->ch) . ': ' . curl_error($this->ch);
 	}
-	public function __toString(){
+
+	/**
+	 * Close current curl session
+	 */
+	public function close() {
+		@curl_close($this->ch);
+	}
+
+	/**
+	 * Cast current request contents to string
+	 *
+	 * @return string
+	 */
+	public function __toString() {
 		return (string) $this->toString;
 	}
-	public function __destruct(){
+
+	/**
+	 * Close connection on object destruction
+	 */
+	public function __destruct() {
 		$this->close();
 	}
 
@@ -77,7 +166,7 @@ class Curl {
 	 *
 	 * @return Curl
 	 */
-	public static function getInstance( $url = null, $opt = array(), $exec = false ){
-		return new Curl( $url, $opt, $exec );
+	public static function getInstance($url=null, $opt=array(), $exec=false) {
+		return new Curl($url, $opt, $exec);
 	}
 }
