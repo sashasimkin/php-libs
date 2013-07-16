@@ -5,7 +5,6 @@
  * @author Sasha Simkin <sashasimkin@gmail.com>
  */
 
-define('DIR', dirname(__FILE__));
-include DIR . '/lib/Autoload.php';
+include dirname(__FILE__) . '/lib/Autoload.php';
 
-Autoload::registerPath(DIR . '/lib');
+Autoload::registerPath(dirname(__FILE__) . '/lib');
