@@ -1,0 +1,157 @@
+<?php
+/**
+ * Db thin wrapper
+ *
+ * @author Sasha Simkin <sashasimkin@gmail.com>
+ */
+
+
+class Data {
+
+	/**
+	 * Internal db identifier
+	 *
+	 * @var object
+	 */
+	private $db;
+
+	/**
+	 * How fetch data when SELECT data from Db
+	 *
+	 * @var int
+	 */
+	private $fetchMode=PDO::FETCH_ASSOC;
+
+	/**
+	 * Queries count for object.
+	 * Just for stats
+	 *
+	 * @var int
+	 */
+	private $qCount=0;
+
+	/**
+	 * Construct class, connect to Db and save identifier into $this->db
+	 *
+	 * @param $config array Connection settings
+	 */
+	public function __construct($config) {
+
+		try {
+			$this->db=new PDO('mysql:host=' . $config['hostname'] . ';dbname=' . $config['db'], $config['user'], $config['password']);
+
+			$this->db->query('set names "windows-1251"');
+
+			$this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		} catch(PDOException $e) {
+
+			$this->error('connect', array('message'=>$e->getMessage()));
+		}
+	}
+
+	/**
+	 * Querying database
+	 *
+	 * @param $query
+	 *
+	 * @return object Object with query result and some additional fields
+	 */
+	public function query($query) {
+		$query=trim($query);
+		$type=trim(strtoupper(substr($query, 0, strpos($query, ' '))));
+
+		try {
+			$q=$this->db->query($query);
+
+			$data['status']=true;
+
+			switch($type) {
+				case 'SELECT':
+					$data['data']=$q->fetchAll($this->fetchMode);
+					$data['count']=count($data['data']);
+					break;
+
+				case 'INSERT':
+					$data['count']=$q->rowCount();
+					$data['id']=$this->db->lastInsertId();
+					break;
+
+				case 'UPDATE':
+					$data['count']=$q->rowCount();
+					break;
+
+				case 'DELETE':
+					$data['count']=$q->rowCount();
+					break;
+
+				case 'TRUNCATE':
+					throw new PDOException('Incorrect query type.');
+					break;
+				default: break;
+			}
+
+			$this->qCount++;
+
+			return (object) $data;
+		} catch(PDOException $e) {
+			$this->error($type, array('message'=>$e->getMessage(), 'query'=>$query));
+
+			$data['status']=false;
+
+			return (object) $data;
+		}
+	}
+
+	/**
+	 * Set pdo attributes directly to connection
+	 *
+	 * @param $attr Attribute name
+	 * @param $value Attribute value
+	 *
+	 * @return bool
+	 */
+	public function setAttribute($attr, $value) {
+		return $this->db->setAttribute($attr, $value);
+	}
+
+	/**
+	 * Set fetch mode
+	 *
+	 * @param $mode
+	 *
+	 * @return mixed
+	 */
+	public function setFetchMode($mode) {
+		return $this->fetchMode=$mode;
+	}
+
+	/**
+	 * Escape string
+	 *
+	 * @param $value
+	 *
+	 * @return string
+	 */
+	public function quote($value) {
+		return $this->db->quote($value);
+	}
+
+	/**
+	 * Show errors
+	 *
+	 * @param string $operation Operation whereby error occured
+	 * @param array $message Message to show
+	 */
+	private function error($operation, $message) {
+		echo 'DataBase Error: ' . $operation . '<br /> Message: ' . $message['message'] . '<br /> Query: ' . $message['query'] . '<hr />';
+	}
+
+	/**
+	 * Get queries count for current object
+	 *
+	 * @return int
+	 */
+	public function qCount() {
+		return $this->qCount;
+	}
+}
