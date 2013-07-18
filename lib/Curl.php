@@ -101,13 +101,29 @@ class Curl {
 	 *
 	 * @param $pattern
 	 * @param $matches
-	 * @param null $flags
+	 * @param int $flags
 	 * @param int $offset
 	 *
 	 * @return $this Curl
 	 */
-	public function match($pattern, &$matches, $flags=null, $offset=0) {
+	public function match($pattern, &$matches, $flags=0, $offset=0) {
 		preg_match($pattern, $this->toString, $matches, $flags, $offset);
+
+		return $this;
+	}
+
+	/**
+	 * Just preg_match_all wrapper
+	 *
+	 * @param $pattern
+	 * @param $matches
+	 * @param int $flags
+	 * @param int $offset
+	 *
+	 * @return $this Curl
+	 */
+	public function match_all($pattern, &$matches, $flags=PREG_PATTERN_ORDER, $offset=0) {
+		preg_match_all($pattern, $this->toString, $matches, $flags, $offset);
 
 		return $this;
 	}
