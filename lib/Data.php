@@ -139,11 +139,13 @@ class Data {
 	/**
 	 * Show errors
 	 *
-	 * @param string $operation Operation whereby error occured
-	 * @param array $message Message to show
+	 * @param string $operation
+	 * @param array $message
+	 *
+	 * @throws Exception
 	 */
 	private function error($operation, $message) {
-		echo 'DataBase Error: ' . $operation . '<br /> Message: ' . $message['message'] . '<br /> Query: ' . $message['query'] . '<hr />';
+		throw new Exception('DataBase Error: ' . $operation . '<br /> Message: ' . $message['message'] . '<br /> Query: ' . $message['query'] . '<hr />');
 	}
 
 	/**
