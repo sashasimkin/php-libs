@@ -40,7 +40,7 @@ class Data {
 		try {
 			$this->db=new PDO('mysql:host=' . $config['hostname'] . ';dbname=' . $config['db'], $config['user'], $config['password']);
 
-			$this->db->query('set names "windows-1251"');
+			$this->db->query('set names "utf8"');
 
 			$this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		} catch(PDOException $e) {
